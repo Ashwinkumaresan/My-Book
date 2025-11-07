@@ -1,5 +1,5 @@
 import './App.css'
-import { EnhancedBookReader } from './EnhancedBookReader'
+// import { EnhancedBookReader } from './EnhancedBookReader'
 import InteractiveBookApp from './InteractiveBookApp'
 
 function App() {

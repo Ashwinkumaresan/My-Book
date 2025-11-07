@@ -1,173 +1,164 @@
-import React, { useRef, useEffect, useState } from "react";
-import HTMLFlipBook from "react-pageflip";
-import { motion } from "framer-motion";
-import { BookPageContent } from "./BookPageContent";
+"use client"
 
-const bookContent = {
-  title: "The Quiet Library",
-  subtitle: "A short tale of late-night stories",
-  author: "Ashwin K.",
-  chapters: [
-    {
-      title: "Cover",
-      pages: ["Cover Page"],
-      isCover: true,
-    },
-    {
-      title: "Table of Contents",
-      pages: ["Table of Contents"],
-      isToc: true,
-    },
-    {
-      title: "Prologue",
-      pages: [
-        "Night had a way of tucking the city in like a soft blanket. The library, however, never quite slept.",
-        "Shelves whispered the stories of a thousand lives; some in ink, some in memory.",
-      ],
-    },
-    {
-      title: "The Lantern",
-      pages: [
-        "Rhea found the lantern wedged between two encyclopedias. It hummed when she touched it.",
-        "Light spilled like warm tea, and for a moment, the dust motes looked like tiny planets.",
-      ],
-    },
-    {
-      title: "Keeper's Note",
-      pages: [
-        "A scrawled note tucked into an atlas: 'Keep what you borrow, return yourself.'",
-        "It was unclear if the note warned or invited. Rhea chose the latter.",
-      ],
-    },
-  ],
-};
+import { useEffect, useRef, useState } from "react"
+import HTMLFlipBook from "react-pageflip"
+import "bootstrap/dist/css/bootstrap.min.css"
 
-export function EnhancedBookReader() {
-  const bookRef = useRef(null);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [isLoaded, setIsLoaded] = useState(false);
+export default function MobileBookView() {
+  const flipBook = useRef(null)
+  const [dimensions, setDimensions] = useState({ width: 320, height: 480 })
 
   useEffect(() => {
-    setIsLoaded(true);
-  }, []);
+    const calculateDimensions = () => {
+      const viewportHeight = window.visualViewport
+        ? window.visualViewport.height
+        : window.innerHeight
+      const height = viewportHeight * 0.95
+      const aspectRatio = 0.7
+      const width = Math.min(height * aspectRatio, window.innerWidth * 0.9) // ✅ prevent horizontal overflow
+      setDimensions({ width, height })
+    }
 
-  const allPages = bookContent.chapters.flatMap((ch) => ch.pages);
+    calculateDimensions()
+    window.addEventListener("resize", calculateDimensions)
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", calculateDimensions)
+    }
 
-  const handlePageChange = (e) => {
-    setCurrentPage(e.data);
-  };
+    return () => {
+      window.removeEventListener("resize", calculateDimensions)
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener("resize", calculateDimensions)
+      }
+    }
+  }, [])
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.8 }}
-      style={{
-        width: "100vw",
-        height: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "linear-gradient(135deg, #f9f5ef 0%, #fffdf8 100%)",
-        position: "relative",
-        overflow: "hidden",
-        fontFamily: '"Merriweather", serif',
-      }}
-    >
-      {/* Ambient Lighting Effect */}
+    <div className="mobile-book-container d-flex justify-content-center align-items-center bg-light">
       <div
+        className="book-shell shadow-lg position-relative rounded"
         style={{
-          position: "absolute",
-          top: 0,
-          left: "50%",
-          transform: "translateX(-50%)",
-          width: "200%",
-          height: "150%",
-          background:
-            "radial-gradient(circle at center top, rgba(255,255,255,0.4) 0%, transparent 70%)",
-          pointerEvents: "none",
-        }}
-      />
-
-      {/* Book Container with Shadow */}
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 1, delay: 0.3 }}
-        style={{
-          position: "relative",
-          width: "90vw",
-          height: "100vh",
-          filter:
-            "drop-shadow(0 60px 120px rgba(0, 0, 0, 0.35)) drop-shadow(0 30px 60px rgba(0, 0, 0, 0.15))",
+          width: `${dimensions.width}px`,
+          height: `${dimensions.height}px`,
+          backgroundColor: "#fffef9",
         }}
       >
-        <div
-          style={{
-            width: "100%",
-            height: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
+        <HTMLFlipBook
+          width={dimensions.width}
+          height={dimensions.height}
+          showCover={true}
+          drawShadow={true}
+          maxShadowOpacity={0.5}
+          flippingTime={700}
+          usePortrait={true}
+          swipeDistance={30}
+          ref={flipBook}
+          className="w-100 h-100"
         >
-          {isLoaded && (
-            <HTMLFlipBook
-              width={400}
-              height={500}
-              size="stretch"
-              minWidth={315}
-              maxWidth={1000}
-              minHeight={400}
-              maxHeight={1533}
-              maxShadowOpacity={0.5}
-              showCover={true}
-              mobileScrollSupport={true}
-              onFlip={handlePageChange}
-              ref={bookRef}
-              className="book-container"
-              style={{ perspective: "1200px" }}
-            >
-              {allPages.map((pageContent, index) => (
-                <BookPageContent
-                  key={index}
-                  pageNumber={index}
-                  totalPages={allPages.length}
-                  content={pageContent}
-                  bookTitle={bookContent.title}
-                  bookSubtitle={bookContent.subtitle}
-                  bookAuthor={bookContent.author}
-                  chapters={bookContent.chapters}
-                  onChapterClick={(chapterIndex) => {
-                    const pageIndex = bookContent.chapters
-                      .slice(0, chapterIndex)
-                      .reduce((sum, ch) => sum + ch.pages.length, 0);
-                    bookRef.current?.pageFlip?.goToPage(pageIndex + 1);
-                  }}
-                />
-              ))}
-            </HTMLFlipBook>
-          )}
-        </div>
-      </motion.div>
+          <div className="book-page text-center p-4 d-flex flex-column justify-content-center align-items-center">
+            <h2 className="book-title mb-3">The Quiet Library</h2>
+            <p className="book-subtitle mb-4">
+              A short tale of late-night stories
+            </p>
+            <small className="text-muted">by Ashwin K.</small>
+          </div>
 
-      {/* Page Counter */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.8 }}
-        style={{
-          position: "absolute",
-          bottom: 20,
-          right: 30,
-          fontSize: "14px",
-          color: "#2b2b2b",
-          opacity: 0.6,
-          fontFamily: '"Merriweather", serif',
-        }}
-      >
-        Page {currentPage + 1}
-      </motion.div>
-    </motion.div>
-  );
+          <div className="book-page p-4">
+            <h4 className="chapter-title text-center mb-3">Prologue</h4>
+            <p className="story-text">
+              Night had a way of tucking the city in like a soft blanket. The
+              library, however, never quite slept.
+            </p>
+          </div>
+
+          <div className="book-page p-4">
+            <h4 className="chapter-title text-center mb-3">The Lantern</h4>
+            <p className="story-text">
+              Rhea found the lantern wedged between two encyclopedias. It hummed
+              when she touched it.
+            </p>
+          </div>
+
+          <div className="book-page p-4">
+            <h4 className="chapter-title text-center mb-3">Keeper's Note</h4>
+            <p className="story-text">
+              A scrawled note tucked into an atlas: “Keep what you borrow,
+              return yourself.”
+            </p>
+          </div>
+        </HTMLFlipBook>
+      </div>
+
+      <style>{css}</style>
+    </div>
+  )
 }
+
+const css = `
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Merriweather:wght@300;400&display=swap');
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100dvh;
+    overflow: hidden;
+    background: #faf8f5;
+    width: 100%;
+  }
+
+  .mobile-book-container {
+    width: 100%;
+    height: 100dvh;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #faf8f5;
+  }
+
+  .book-shell {
+    border-radius: 10px;
+    overflow: hidden;
+    max-width: 95vw; /* ✅ ensures no horizontal overflow */
+  }
+
+  .book-page {
+    background: linear-gradient(to bottom, #fffdf8 0%, #fffef9 50%, #fffdf8 100%);
+    border: 1px solid #e6dcc9;
+    height: 100%;
+    width: 100%;
+  }
+
+  .book-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: #2b2b2b;
+  }
+
+  .book-subtitle {
+    font-family: 'Merriweather', serif;
+    font-size: 14px;
+    color: #4a4238;
+    font-style: italic;
+  }
+
+  .chapter-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: #2b2b2b;
+  }
+
+  .story-text {
+    font-family: 'Merriweather', serif;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #2b2b2b;
+    text-align: justify;
+  }
+
+  .stf__block::after,
+  .stf__wrapper::after {
+    display: none !important;
+  }
+`
